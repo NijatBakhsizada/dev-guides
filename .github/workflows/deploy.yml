@@ -4,6 +4,9 @@ on:
   push:
     branches: [ main ]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -30,8 +33,17 @@ jobs:
           username: root
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "dist/*"
-          target: "/var/www/dev-guides"
+          target: "/tmp/dev-guides-new"
           strip_components: 1
 
-      - name: Done
-        run: echo "✅ dev-guides deployed successfully!"
+      - name: Move to web root
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: root
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            mkdir -p /var/www/dev-guides
+            cp -r /tmp/dev-guides-new/. /var/www/dev-guides/
+            rm -rf /tmp/dev-guides-new
+            echo "✅ dev-guides deployed!"
